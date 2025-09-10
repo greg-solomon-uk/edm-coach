@@ -53,8 +53,7 @@
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-  <div id="yaml-selector-container" style="padding: 1rem;">
-    <select id="yaml-selector" class="form-select" style="width: auto; min-width: 120px; display: inline-block;"></select>
+  <div id="yaml-selector-container" style="padding: 1rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
   </div>
   <div id="suggested-prompts" class="container-fluid p-2"></div>
   <div id="input-container" class="container-fluid">
@@ -123,19 +122,6 @@
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    function simpleHash(conversationHistory) {
-      let key = conversationHistory
-        .filter((e, i) => e.role == 'user')
-        .map(e => e.content)
-        .join(' | ');
-      let hash = 0;
-      for (let i = 0; i < key.length; i++) {
-        hash = ((hash << 5) - hash) + key.charCodeAt(i);
-        hash |= 0;
-      }
-      return Math.abs(hash).toString(36).padStart(6, '0').slice(0, 6) + '-' + key.split("|").pop().replace(/:/g, "");
-    }
-
     async function sendMessage(instructions = '') {
       const prompt = userInput.value.trim();
       if (!prompt) return;
@@ -153,8 +139,6 @@
       userInput.value = '';
       spinner.style.display = 'block';
       
-      let cacheKey = simpleHash(conversationHistory);
-
       try {
         const response = await fetch('/get-response', {
           method: 'POST',
@@ -162,7 +146,6 @@
           body: JSON.stringify({
             conversation_history: conversationHistory,
             instructions: instructions,
-            cache_key: cacheKey,
             storage: storageData
           })
         });
@@ -185,9 +168,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    async function loadPrompts() {
-      const selector = document.getElementById('yaml-selector');
-      const selectedFile = selector.value;
+    async function loadPrompts(selectedFile) {
       const response = await fetch(`/static/${selectedFile}`);
       const yamlText = await response.text();
       const yamlData = jsyaml.load(yamlText);
@@ -228,17 +209,28 @@
       });
     }
     window.addEventListener('DOMContentLoaded', () => {
-      // Populate the YAML dropdown from the list provided by app.py
-      const yamlSelector = document.getElementById('yaml-selector');
+      // Create buttons for each YAML file
+      const container = document.getElementById('yaml-selector-container');
       yamlFiles.forEach(file => {
-        const option = document.createElement('option');
-        option.value = file;
-        option.textContent = file.replace(/_/g, ' ').replace(/\.yaml$/i, '');
-        yamlSelector.appendChild(option);
+        const button = document.createElement('button');
+        button.className = 'btn btn-outline-primary';
+        button.textContent = file.replace(/_/g, ' ').replace(/\.yaml$/i, '');
+        button.dataset.file = file;
+        button.addEventListener('click', (e) => {
+          // Remove active class from all buttons
+          container.querySelectorAll('button').forEach(btn => btn.classList.remove('btn-primary', 'active'));
+          // Add active class to clicked button
+          button.classList.add('btn-primary', 'active');
+          loadPrompts(file);
+        });
+        container.appendChild(button);
       });
-      // Load prompts for the initially selected file
-      loadPrompts();
-      yamlSelector.addEventListener('change', loadPrompts);
+      // Load prompts for the first file
+      if (yamlFiles.length > 0) {
+        const firstButton = container.querySelector('button');
+        firstButton.classList.add('btn-primary', 'active');
+        loadPrompts(yamlFiles[0]);
+      }
     });
 
     function removeLastQA(deleteQuestion) {

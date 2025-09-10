@@ -13,7 +13,7 @@ instructions: |
   Part 4. Knowledge Quiz: Ask a series of questions one at a time to test the knowledge of the user, provide constructive feedback on the accuracy of their answer. Offer to ask them a further question or after a minimum of five questions give them an option to finish instead and when they select finish provide them with a rough evaluation of their knowledge in terms of expert, proficient, able or learning.
 
 prompts:
-- display: "🎓 Train Me"
-  prompt: "Please train me in Data Management"
-- display: "☑ Test Me"
-  prompt: "Please test my knowledge of Data Management"
+- display: "🎓 Explain EDM to me"
+  prompt: "Tell me about Enterprise Data Management"
+- display: "☑ Test my EDM knowledge"
+  prompt: "Quiz me on Enterprise Data Management"
